@@ -1,27 +1,50 @@
 const pool = require('../config/db');
 
-const createCustomer = async (req, res) => {
-  const { name, email, telefono, tipo_cliente, red_social } = req.body;
+const GIROS_PERMITIDOS = [
+  'Cafetería',
+  'Veterinaria',
+  'Corporativo',
+  'Restaurante',
+  'Oficina',
+  'Tienda Natural'
+];
 
-  // Validaciones básicas
+const createCustomer = async (req, res) => {
+  const { name, email, telefono, tipo_cliente, red_social, empresa, giro_empresa } = req.body;
+
   if (!name || !email) {
     return res.status(400).json({ error: 'Nombre y correo son obligatorios' });
   }
 
-  // Validación de tipo_cliente
   const validTypes = ['B2B', 'B2C'];
   if (tipo_cliente && !validTypes.includes(tipo_cliente)) {
     return res.status(400).json({ error: 'tipo_cliente debe ser B2B o B2C' });
   }
 
+  if (tipo_cliente === 'B2B') {
+    if (!empresa || !giro_empresa) {
+      return res.status(400).json({ error: 'Empresa y giro son obligatorios para clientes B2B' });
+    }
+    if (!GIROS_PERMITIDOS.includes(giro_empresa)) {
+      return res.status(400).json({ error: 'Giro no permitido' });
+    }
+  }
+
   try {
     const result = await pool.query(
-      `INSERT INTO customers (name, email, telefono, tipo_cliente, red_social)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO customers (name, email, telefono, tipo_cliente, red_social, empresa, giro_empresa)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [name, email, telefono || null, tipo_cliente || null, red_social || null]
+      [
+        name,
+        email,
+        telefono || null,
+        tipo_cliente || null,
+        red_social || null,
+        tipo_cliente === 'B2B' ? empresa : null,
+        tipo_cliente === 'B2B' ? giro_empresa : null
+      ]
     );
-    
 
     res.status(201).json({ customer: result.rows[0] });
   } catch (error) {
@@ -30,38 +53,44 @@ const createCustomer = async (req, res) => {
   }
 };
 
-const getCustomers = async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM customers');
-    res.json({ customers: result.rows });
-  } catch (error) {
-    console.error('🔥 Error al obtener clientes:', error);
-    res.status(500).json({ error: 'Error al obtener clientes' });
-  }
-};
-
 const updateCustomer = async (req, res) => {
   const { id } = req.params;
-  const { name, email, telefono, tipo_cliente, red_social } = req.body;
+  const { name, email, telefono, tipo_cliente, red_social, empresa, giro_empresa } = req.body;
 
-  // Validar campos obligatorios
   if (!name || !email) {
     return res.status(400).json({ error: 'Nombre y correo son obligatorios' });
   }
 
-  // Validar tipo_cliente
   const validTypes = ['B2B', 'B2C'];
   if (tipo_cliente && !validTypes.includes(tipo_cliente)) {
     return res.status(400).json({ error: 'tipo_cliente debe ser B2B o B2C' });
   }
 
+  if (tipo_cliente === 'B2B') {
+    if (!empresa || !giro_empresa) {
+      return res.status(400).json({ error: 'Empresa y giro son obligatorios para clientes B2B' });
+    }
+    if (!GIROS_PERMITIDOS.includes(giro_empresa)) {
+      return res.status(400).json({ error: 'Giro no permitido' });
+    }
+  }
+
   try {
     const result = await pool.query(
       `UPDATE customers 
-       SET name = $1, email = $2, telefono = $3, tipo_cliente = $4, red_social = $5
-       WHERE id = $6
+       SET name = $1, email = $2, telefono = $3, tipo_cliente = $4, red_social = $5, empresa = $6, giro_empresa = $7
+       WHERE id = $8
        RETURNING *`,
-      [name, email, telefono || null, tipo_cliente || null, red_social || null, id]
+      [
+        name,
+        email,
+        telefono || null,
+        tipo_cliente || null,
+        red_social || null,
+        tipo_cliente === 'B2B' ? empresa : null,
+        tipo_cliente === 'B2B' ? giro_empresa : null,
+        id
+      ]
     );
 
     if (result.rowCount === 0) {
@@ -72,6 +101,17 @@ const updateCustomer = async (req, res) => {
   } catch (error) {
     console.error('🔥 Error al actualizar cliente:', error);
     res.status(500).json({ error: 'Error al actualizar cliente' });
+  }
+};
+
+// getCustomers y getCustomerById siguen igual:
+const getCustomers = async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM customers');
+    res.json({ customers: result.rows });
+  } catch (error) {
+    console.error('🔥 Error al obtener clientes:', error);
+    res.status(500).json({ error: 'Error al obtener clientes' });
   }
 };
 
@@ -91,7 +131,6 @@ const getCustomerById = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener cliente' });
   }
 };
-
 
 module.exports = {
   createCustomer,
