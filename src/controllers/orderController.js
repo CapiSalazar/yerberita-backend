@@ -68,9 +68,6 @@ const createOrder = async (req, res) => {
         [item.product_id]
       );
 
-      console.log(`📦 Productos para orden #${row.id}:`, productsResult.rows);
-
-
       if (productResult.rows.length === 0) {
         return res.status(400).json({ error: `Producto con ID ${item.product_id} no disponible` });
       }
@@ -93,6 +90,8 @@ const createOrder = async (req, res) => {
 
     const orderId = orderResult.rows[0].id;
 
+    console.log(`📦 Orden #${orderId} creada. Detalle de productos:`, orderProducts);
+
     for (const item of orderProducts) {
       await pool.query(
         "INSERT INTO order_products (order_id, product_id, quantity, subtotal) VALUES ($1, $2, $3, $4)",
@@ -106,6 +105,7 @@ const createOrder = async (req, res) => {
     res.status(500).json({ error: "Error al crear orden" });
   }
 };
+
 
 // ✅ Obtener una orden específica con sus productos
 const getOrderById = async (req, res) => {
