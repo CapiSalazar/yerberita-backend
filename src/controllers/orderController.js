@@ -142,10 +142,67 @@ const getOrderById = async (req, res) => {
   }
 };
 
+// Modificar los status de una orden
+
+const updateOrderStatus = async (req, res) => {
+  const { id } = req.params;
+  const { is_delivered, is_paid } = req.body;
+
+  try {
+    // 1. Obtenemos el estado actual de la orden
+    const current = await pool.query('SELECT is_delivered, is_paid FROM orders WHERE id = $1', [id]);
+
+    if (current.rowCount === 0) {
+      return res.status(404).json({ error: 'Orden no encontrada' });
+    }
+
+    const order = current.rows[0];
+    const updates = [];
+    const values = [];
+    let index = 1;
+
+    // ✅ Solo permitimos cambiar de false a true
+    if (is_delivered === true && order.is_delivered === false) {
+      updates.push(`is_delivered = $${index}`);
+      values.push(true);
+      index++;
+
+      updates.push(`delivered_at = $${index}`);
+      values.push(new Date());
+      index++;
+    }
+
+    if (is_paid === true && order.is_paid === false) {
+      updates.push(`is_paid = $${index}`);
+      values.push(true);
+      index++;
+
+      updates.push(`paid_at = $${index}`);
+      values.push(new Date());
+      index++;
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No hay cambios válidos. La orden ya estaba entregada o pagada.' });
+    }
+
+    values.push(id);
+    const query = `UPDATE orders SET ${updates.join(', ')} WHERE id = $${index} RETURNING *`;
+
+    const result = await pool.query(query, values);
+
+    res.json({ message: 'Estado actualizado ✅', order: result.rows[0] });
+  } catch (error) {
+    console.error('🔥 Error al actualizar estado de orden:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 module.exports = {
     createOrder,
     getOrderById,
-    getAllOrders // <-- que esté aquí
+    getAllOrders, // <-- que esté aquí 
+    updateOrderStatus
   };
   
 
