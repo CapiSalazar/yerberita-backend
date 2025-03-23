@@ -17,7 +17,6 @@ const getAllOrders = async (req, res) => {
       JOIN customers c ON o.customer_id = c.id
       JOIN order_products op ON o.id = op.order_id
       JOIN products p ON op.product_id = p.id
-      WHERE o.status = 'activo'
       GROUP BY o.id, c.name, o.created_at
       ORDER BY o.created_at DESC
     `);
