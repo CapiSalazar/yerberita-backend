@@ -1,12 +1,24 @@
 const pool = require('../config/db');
 
-// ✅ Obtener todas las órdenes con sus productos
+// ✅ Obtener todas las órdenes con costo de producción
+console.log("🛠 Ejecutando getAllOrders...");
+
 const getAllOrders = async (req, res) => {
+  console.log("🛠 Ejecutando getAllOrders...");
   try {
     const result = await pool.query(`
-      SELECT o.id, o.total_price, o.created_at, c.name AS customer
+      SELECT 
+        o.id,
+        o.total_price,
+        o.created_at,
+        c.name AS customer,
+        COALESCE(SUM(p.costo_produccion * op.quantity), 0) AS total_costo_produccion
       FROM orders o
       JOIN customers c ON o.customer_id = c.id
+      JOIN order_products op ON o.id = op.order_id
+      JOIN products p ON op.product_id = p.id
+      WHERE o.status = 'activo'
+      GROUP BY o.id, c.name, o.created_at
       ORDER BY o.created_at DESC
     `);
 
@@ -21,17 +33,21 @@ const getAllOrders = async (req, res) => {
 
         return {
           order,
-          products: productsResult.rows,
+          products: productsResult.rows
         };
       })
     );
 
+    console.log("📦 Órdenes con costos:", orders); // 💥 este log es clave
     res.json(orders);
   } catch (error) {
-    console.error('🔥 Error al obtener órdenes:', error);
-    res.status(500).json({ error: 'Error al obtener órdenes' });
+    console.error("🔥 Error al obtener órdenes:", error);
+    res.status(500).json({ error: "Error al obtener órdenes" });
   }
 };
+
+
+
 
 // ✅ Crear una nueva orden
 const createOrder = async (req, res) => {
@@ -52,6 +68,9 @@ const createOrder = async (req, res) => {
         "SELECT price FROM products WHERE id = $1 AND status = 'activo'",
         [item.product_id]
       );
+
+      console.log(`📦 Productos para orden #${row.id}:`, productsResult.rows);
+
 
       if (productResult.rows.length === 0) {
         return res.status(400).json({ error: `Producto con ID ${item.product_id} no disponible` });
