@@ -95,47 +95,48 @@ const getCustomerRanking = async (req, res) => {
 
 // ✅ Balance completo
 const getBalance = async (req, res) => {
-  try {
-    const incomeResult = await pool.query(`
-      SELECT COALESCE(SUM(p.price * op.quantity), 0) AS total_income
-      FROM order_products op
-      JOIN products p ON op.product_id = p.id
-      JOIN orders o ON op.order_id = o.id
-      WHERE o.status = 'activo'
-    `);
-    const total_income = parseFloat(incomeResult.rows[0].total_income);
-
-    const expenseResult = await pool.query(`
-      SELECT COALESCE(SUM(amount), 0) AS total_expenses
-      FROM expenses
-    `);
-    const total_expenses = parseFloat(expenseResult.rows[0].total_expenses);
-
-    const costResult = await pool.query(`
-      SELECT COALESCE(SUM(COALESCE(p.costo_produccion, 0) * op.quantity), 0) AS total_production_cost
-      FROM order_products op
-      JOIN products p ON op.product_id = p.id
-      JOIN orders o ON op.order_id = o.id
-      WHERE o.status = 'activo'
-    `);
-    const total_production_cost = parseFloat(costResult.rows[0].total_production_cost);
-
-    const balance = total_income - total_expenses;
-    const net_profit = balance - total_production_cost;
-
-    res.json({
-      total_income,
-      total_expenses,
-      balance,
-      total_production_cost,
-      net_profit,
-      status: balance >= 0 ? 'ganancia' : 'pérdida'
-    });
-  } catch (error) {
-    console.error("🔥 Error al calcular balance:", error);
-    res.status(500).json({ error: "Error al calcular punto de equilibrio" });
-  }
-};
+    try {
+      const incomeResult = await pool.query(`
+        SELECT COALESCE(SUM(p.price * op.quantity), 0) AS total_income
+        FROM order_products op
+        JOIN products p ON op.product_id = p.id
+        JOIN orders o ON op.order_id = o.id
+        WHERE o.status = 'activo'
+      `);
+      const total_income = parseFloat(incomeResult.rows[0].total_income);
+  
+      const expenseResult = await pool.query(`
+        SELECT COALESCE(SUM(amount), 0) AS total_expenses
+        FROM expenses
+      `);
+      const total_expenses = parseFloat(expenseResult.rows[0].total_expenses);
+  
+      const costResult = await pool.query(`
+        SELECT COALESCE(SUM(p.costo_produccion * op.quantity), 0) AS total_production_cost
+        FROM order_products op
+        JOIN products p ON op.product_id = p.id
+        JOIN orders o ON op.order_id = o.id
+        WHERE o.status = 'activo'
+      `);
+      const total_production_cost = parseFloat(costResult.rows[0].total_production_cost);
+  
+      const balance = total_income - total_expenses;
+      const net_profit = balance - total_production_cost;
+  
+      res.json({
+        total_income,
+        total_expenses,
+        balance,
+        total_production_cost,
+        net_profit,
+        status: balance >= 0 ? 'ganancia' : 'pérdida'
+      });
+    } catch (error) {
+      console.error("🔥 Error al calcular balance:", error);
+      res.status(500).json({ error: "Error al calcular punto de equilibrio" });
+    }
+  };
+  
 
 // ✅ Exportar todos los controladores
 module.exports = {
