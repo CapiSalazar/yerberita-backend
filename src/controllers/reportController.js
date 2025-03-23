@@ -101,27 +101,31 @@ const getBalance = async (req, res) => {
         FROM order_products op
         JOIN products p ON op.product_id = p.id
         JOIN orders o ON op.order_id = o.id
-        WHERE o.status = 'activo'
       `);
       const total_income = parseFloat(incomeResult.rows[0].total_income);
+      console.log("💰 total_income:", total_income);
   
       const expenseResult = await pool.query(`
         SELECT COALESCE(SUM(amount), 0) AS total_expenses
         FROM expenses
       `);
       const total_expenses = parseFloat(expenseResult.rows[0].total_expenses);
+      console.log("💸 total_expenses:", total_expenses);
   
       const costResult = await pool.query(`
         SELECT COALESCE(SUM(p.costo_produccion * op.quantity), 0) AS total_production_cost
         FROM order_products op
         JOIN products p ON op.product_id = p.id
         JOIN orders o ON op.order_id = o.id
-        WHERE o.status = 'activo'
       `);
       const total_production_cost = parseFloat(costResult.rows[0].total_production_cost);
+      console.log("🏭 total_production_cost:", total_production_cost);
   
       const balance = total_income - total_expenses;
       const net_profit = balance - total_production_cost;
+  
+      console.log("🧮 balance:", balance);
+      console.log("📈 net_profit:", net_profit);
   
       res.json({
         total_income,
@@ -137,7 +141,6 @@ const getBalance = async (req, res) => {
     }
   };
   
-
 // ✅ Exportar todos los controladores
 module.exports = {
   getSalesReport,
