@@ -1,13 +1,24 @@
 const pool = require('../config/db');
 
+// 🔧 Normaliza strings eliminando acentos y bajando a minúsculas
+const normalize = (str) =>
+  str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 const GIROS_PERMITIDOS = [
-  'Cafetería',
-  'Veterinaria',
-  'Corporativo',
-  'Restaurante',
-  'Oficina',
-  'Tienda Natural'
+  "Cafetería",
+  "Restaurante",
+  "Tienda Natural",
+  "Herbolaria",
+  "Veterinaria",
+  "Corporativo",
+  "Gimnasio",
+  "Spa",
+  "Distribuidora",
+  "Otro"
 ];
+
+// 🔄 Normalizamos los giros permitidos una sola vez
+const GIROS_NORMALIZADOS = GIROS_PERMITIDOS.map(g => normalize(g));
 
 const createCustomer = async (req, res) => {
   const { name, email, telefono, tipo_cliente, red_social, empresa, giro_empresa } = req.body;
@@ -25,7 +36,8 @@ const createCustomer = async (req, res) => {
     if (!empresa || !giro_empresa) {
       return res.status(400).json({ error: 'Empresa y giro son obligatorios para clientes B2B' });
     }
-    if (!GIROS_PERMITIDOS.includes(giro_empresa)) {
+
+    if (!GIROS_NORMALIZADOS.includes(normalize(giro_empresa))) {
       return res.status(400).json({ error: 'Giro no permitido' });
     }
   }
@@ -70,7 +82,8 @@ const updateCustomer = async (req, res) => {
     if (!empresa || !giro_empresa) {
       return res.status(400).json({ error: 'Empresa y giro son obligatorios para clientes B2B' });
     }
-    if (!GIROS_PERMITIDOS.includes(giro_empresa)) {
+
+    if (!GIROS_NORMALIZADOS.includes(normalize(giro_empresa))) {
       return res.status(400).json({ error: 'Giro no permitido' });
     }
   }
@@ -104,7 +117,6 @@ const updateCustomer = async (req, res) => {
   }
 };
 
-// getCustomers y getCustomerById siguen igual:
 const getCustomers = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM customers');
