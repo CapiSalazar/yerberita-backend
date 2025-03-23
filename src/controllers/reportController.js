@@ -93,14 +93,14 @@ const getCustomerRanking = async (req, res) => {
   }
 };
 
-// ✅ Balance mejorado: ingresos, gastos, costos de producción, utilidad
+// ✅ Balance completo
 const getBalance = async (req, res) => {
   try {
     const incomeResult = await pool.query(`
-      SELECT COALESCE(SUM(p.price * oi.quantity), 0) AS total_income
-      FROM order_items oi
-      JOIN products p ON oi.product_id = p.id
-      JOIN orders o ON oi.order_id = o.id
+      SELECT COALESCE(SUM(p.price * op.quantity), 0) AS total_income
+      FROM order_products op
+      JOIN products p ON op.product_id = p.id
+      JOIN orders o ON op.order_id = o.id
       WHERE o.status = 'activo'
     `);
     const total_income = parseFloat(incomeResult.rows[0].total_income);
@@ -112,10 +112,10 @@ const getBalance = async (req, res) => {
     const total_expenses = parseFloat(expenseResult.rows[0].total_expenses);
 
     const costResult = await pool.query(`
-      SELECT COALESCE(SUM(p.costo_produccion * oi.quantity), 0) AS total_production_cost
-      FROM order_items oi
-      JOIN products p ON oi.product_id = p.id
-      JOIN orders o ON oi.order_id = o.id
+      SELECT COALESCE(SUM(COALESCE(p.costo_produccion, 0) * op.quantity), 0) AS total_production_cost
+      FROM order_products op
+      JOIN products p ON op.product_id = p.id
+      JOIN orders o ON op.order_id = o.id
       WHERE o.status = 'activo'
     `);
     const total_production_cost = parseFloat(costResult.rows[0].total_production_cost);
