@@ -11,13 +11,17 @@ const getAllOrders = async (req, res) => {
         o.id,
         o.total_price,
         o.created_at,
+        o.is_delivered,
+        o.delivered_at,
+        o.is_paid,
+        o.paid_at,
         c.name AS customer,
         COALESCE(SUM(p.costo_produccion * op.quantity), 0) AS total_costo_produccion
       FROM orders o
       JOIN customers c ON o.customer_id = c.id
       JOIN order_products op ON o.id = op.order_id
       JOIN products p ON op.product_id = p.id
-      GROUP BY o.id, c.name, o.created_at
+      GROUP BY o.id, o.is_delivered, o.delivered_at, o.is_paid, o.paid_at, c.name, o.created_at
       ORDER BY o.created_at DESC
     `);
 
@@ -37,7 +41,7 @@ const getAllOrders = async (req, res) => {
       })
     );
 
-    console.log("📦 Órdenes con costos:", orders); // 💥 este log es clave
+    console.log("📦 Órdenes con costos y estados:", orders);
     res.json(orders);
   } catch (error) {
     console.error("🔥 Error al obtener órdenes:", error);
