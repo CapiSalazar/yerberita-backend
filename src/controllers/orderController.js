@@ -200,6 +200,9 @@ const updateOrderStatus = async (req, res) => {
 
 // ✅ Marcar orden como entregada
 const markOrderAsDelivered = async (req, res) => {
+
+  console.log("📦 PATCH /entregar/:id body:", req.body);
+  
   const { id } = req.params;
 
   try {
@@ -231,6 +234,9 @@ const markOrderAsDelivered = async (req, res) => {
 
 // ✅ Marcar orden como pagada
 const markOrderAsPaid = async (req, res) => {
+
+  console.log("📦 PATCH /entregar/:id body:", req.body);
+
   const { id } = req.params;
 
   try {
