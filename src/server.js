@@ -29,9 +29,17 @@ const app = express();
 
 // Middlewares
 app.use(cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('❌ No autorizado por CORS'));
+      }
+    },
     credentials: true,
+    optionsSuccessStatus: 200
   }));
+  
 app.use(express.json());
 
 // Rutas
