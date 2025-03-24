@@ -8,7 +8,6 @@ const {
     getBalance,
     getIncomeStatus // ✅ este debe estar incluido
   } = require('../controllers/reportController');
-const { getIncomeStatus } = require('../controllers/reportController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 router.get('/sales', authMiddleware, getSalesReport);
