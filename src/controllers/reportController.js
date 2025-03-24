@@ -137,7 +137,7 @@ const getBalance = async (req, res) => {
     `);
     const utilidad_esperada = parseFloat(utilidadEsperadaRes.rows[0].utilidad_esperada);
 
-    const balance = ingresos_reales - total_expenses;
+    const balance = ingresos_reales - total_production_cost;
     const net_profit = balance - total_production_cost;
 
     res.json({
