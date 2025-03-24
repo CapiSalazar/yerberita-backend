@@ -146,10 +146,35 @@ const getBalance = async (req, res) => {
   }
 };
 
+// ✅ Ingresos reales vs por cobrar
+const getIncomeStatus = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        COALESCE(SUM(CASE WHEN is_paid THEN total_price ELSE 0 END), 0) AS ingresos_reales,
+        COALESCE(SUM(CASE WHEN NOT is_paid THEN total_price ELSE 0 END), 0) AS ingresos_por_cobrar
+      FROM orders
+    `);
+
+    const { ingresos_reales, ingresos_por_cobrar } = result.rows[0];
+
+    res.json({
+      ingresos_reales: parseFloat(ingresos_reales),
+      ingresos_por_cobrar: parseFloat(ingresos_por_cobrar),
+    });
+  } catch (error) {
+    console.error("🔥 Error al calcular estado de ingresos:", error);
+    res.status(500).json({ error: "Error al obtener datos de ingresos" });
+  }
+};
+
+
 module.exports = {
   getSalesReport,
   getTopProducts,
   getDailySales,
   getCustomerRanking,
   getBalance,
+  getIncomeStatus // ✅ Este debe estar aquí
 };
+
