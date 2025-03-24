@@ -11,6 +11,12 @@ console.log("🔍 Archivo .env cargado correctamente.");
 const express = require('express');
 const cors = require('cors');
 
+const allowedOrigins = [
+  'http://localhost:3000',                 // Dev local
+  'https://admin.yerberita.com',          // Frontend en producción
+];
+
+
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
@@ -22,7 +28,10 @@ const customerRoutes = require('./routes/customerRoutes');
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true,
+  }));
 app.use(express.json());
 
 // Rutas
