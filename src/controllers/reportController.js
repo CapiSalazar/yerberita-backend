@@ -93,83 +93,63 @@ const getCustomerRanking = async (req, res) => {
   }
 };
 
-// ✅ Balance completo
+// ✅ Balance completo (actualizado)
 const getBalance = async (req, res) => {
-    try {
-      const incomeResult = await pool.query(`
-        SELECT COALESCE(SUM(p.price * op.quantity), 0) AS total_income
-        FROM order_products op
-        JOIN products p ON op.product_id = p.id
-        JOIN orders o ON op.order_id = o.id
-      `);
-      const total_income = parseFloat(incomeResult.rows[0].total_income);
-      console.log("💰 total_income:", total_income);
-  
-      const expenseResult = await pool.query(`
-        SELECT COALESCE(SUM(amount), 0) AS total_expenses
-        FROM expenses
-      `);
-      const total_expenses = parseFloat(expenseResult.rows[0].total_expenses);
-      console.log("💸 total_expenses:", total_expenses);
-  
-      const costResult = await pool.query(`
-        SELECT COALESCE(SUM(p.costo_produccion * op.quantity), 0) AS total_production_cost
-        FROM order_products op
-        JOIN products p ON op.product_id = p.id
-        JOIN orders o ON op.order_id = o.id
-      `);
-      const total_production_cost = parseFloat(costResult.rows[0].total_production_cost);
-      console.log("🏭 total_production_cost:", total_production_cost);
-  
-      const balance = total_income - total_expenses;
-      const net_profit = balance - total_production_cost;
-  
-      console.log("🧮 balance:", balance);
-      console.log("📈 net_profit:", net_profit);
-  
-      res.json({
-        total_income,
-        total_expenses,
-        balance,
-        total_production_cost,
-        net_profit,
-        status: balance >= 0 ? 'ganancia' : 'pérdida'
-      });
-    } catch (error) {
-      console.error("🔥 Error al calcular balance:", error);
-      res.status(500).json({ error: "Error al calcular punto de equilibrio" });
-    }
-  };
-
-  // ✅ Ingresos reales vs por cobrar
-const getIncomeStatus = async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT
-        COALESCE(SUM(CASE WHEN is_paid THEN total_price ELSE 0 END), 0) AS ingresos_reales,
-        COALESCE(SUM(CASE WHEN NOT is_paid THEN total_price ELSE 0 END), 0) AS ingresos_por_cobrar
-      FROM orders
+    const realesRes = await pool.query(`
+      SELECT COALESCE(SUM(p.price * op.quantity), 0) AS ingresos_reales
+      FROM order_products op
+      JOIN products p ON op.product_id = p.id
+      JOIN orders o ON op.order_id = o.id
+      WHERE o.is_paid = true
     `);
+    const ingresos_reales = parseFloat(realesRes.rows[0].ingresos_reales);
 
-    const { ingresos_reales, ingresos_por_cobrar } = result.rows[0];
+    const pendientesRes = await pool.query(`
+      SELECT COALESCE(SUM(p.price * op.quantity), 0) AS ingresos_por_cobrar
+      FROM order_products op
+      JOIN products p ON op.product_id = p.id
+      JOIN orders o ON op.order_id = o.id
+      WHERE o.is_paid = false
+    `);
+    const ingresos_por_cobrar = parseFloat(pendientesRes.rows[0].ingresos_por_cobrar);
+
+    const expenseResult = await pool.query(`
+      SELECT COALESCE(SUM(amount), 0) AS total_expenses
+      FROM expenses
+    `);
+    const total_expenses = parseFloat(expenseResult.rows[0].total_expenses);
+
+    const costResult = await pool.query(`
+      SELECT COALESCE(SUM(p.costo_produccion * op.quantity), 0) AS total_production_cost
+      FROM order_products op
+      JOIN products p ON op.product_id = p.id
+      JOIN orders o ON op.order_id = o.id
+    `);
+    const total_production_cost = parseFloat(costResult.rows[0].total_production_cost);
+
+    const balance = ingresos_reales - total_expenses;
+    const net_profit = balance - total_production_cost;
 
     res.json({
-      ingresos_reales: parseFloat(ingresos_reales),
-      ingresos_por_cobrar: parseFloat(ingresos_por_cobrar),
+      ingresos_reales,
+      ingresos_por_cobrar,
+      total_expenses,
+      total_production_cost,
+      balance,
+      net_profit,
+      status: balance >= 0 ? 'ganancia' : 'pérdida'
     });
   } catch (error) {
-    console.error("🔥 Error al calcular estado de ingresos:", error);
-    res.status(500).json({ error: "Error al obtener datos de ingresos" });
+    console.error("🔥 Error al calcular balance:", error);
+    res.status(500).json({ error: "Error al calcular punto de equilibrio" });
   }
 };
 
-  
-// ✅ Exportar todos los controladores
 module.exports = {
   getSalesReport,
   getTopProducts,
   getDailySales,
   getCustomerRanking,
   getBalance,
-  getIncomeStatus,  // <- ¡aquí lo agregas!
 };
