@@ -128,6 +128,15 @@ const getBalance = async (req, res) => {
     `);
     const total_production_cost = parseFloat(costResult.rows[0].total_production_cost);
 
+    const utilidadEsperadaRes = await pool.query(`
+      SELECT COALESCE(SUM((p.price - p.costo_produccion) * op.quantity), 0) AS utilidad_esperada
+      FROM order_products op
+      JOIN products p ON op.product_id = p.id
+      JOIN orders o ON op.order_id = o.id
+      WHERE o.is_paid = false
+    `);
+    const utilidad_esperada = parseFloat(utilidadEsperadaRes.rows[0].utilidad_esperada);
+
     const balance = ingresos_reales - total_expenses;
     const net_profit = balance - total_production_cost;
 
@@ -138,6 +147,7 @@ const getBalance = async (req, res) => {
       total_production_cost,
       balance,
       net_profit,
+      utilidad_esperada,
       status: balance >= 0 ? 'ganancia' : 'pérdida'
     });
   } catch (error) {
