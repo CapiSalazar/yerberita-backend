@@ -202,6 +202,8 @@ const updateOrderStatus = async (req, res) => {
 const markOrderAsDelivered = async (req, res) => {
 
   console.log("📦 PATCH /entregar/:id body:", req.body);
+  console.log('🎯 Estado actual de orden:', order);
+
   
   const { id } = req.params;
 
@@ -236,6 +238,8 @@ const markOrderAsDelivered = async (req, res) => {
 const markOrderAsPaid = async (req, res) => {
 
   console.log("📦 PATCH /entregar/:id body:", req.body);
+  console.log('🎯 Estado actual de orden:', order);
+
 
   const { id } = req.params;
 
