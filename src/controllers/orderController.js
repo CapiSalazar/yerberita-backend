@@ -200,75 +200,71 @@ const updateOrderStatus = async (req, res) => {
 
 // ✅ Marcar orden como entregada
 const markOrderAsDelivered = async (req, res) => {
-
-  console.log("📦 PATCH /entregar/:id body:", req.body);
-  console.log('🎯 Estado actual de orden:', order);
-
-  
   const { id } = req.params;
+  console.log("📦 PATCH /entregar/:id body:", req.body);
 
   try {
-    const result = await pool.query('SELECT is_delivered FROM orders WHERE id = $1', [id]);
+    const current = await pool.query('SELECT is_delivered FROM orders WHERE id = $1', [id]);
 
-    if (result.rowCount === 0) {
+    if (current.rowCount === 0) {
       return res.status(404).json({ error: 'Orden no encontrada' });
     }
 
-    const orden = result.rows[0];
+    const order = current.rows[0]; // ✅ Asignación que faltaba
+    console.log('🎯 Estado actual de orden:', order);
 
-    if (orden.is_delivered) {
-      return res.status(400).json({ error: 'La orden ya fue marcada como entregada' });
+    if (order.is_delivered) {
+      return res.status(400).json({ error: 'La orden ya fue entregada.' });
     }
 
-    const updated = await pool.query(`
-      UPDATE orders
-      SET is_delivered = true, delivered_at = NOW()
-      WHERE id = $1
+    const result = await pool.query(`
+      UPDATE orders 
+      SET is_delivered = true, delivered_at = NOW() 
+      WHERE id = $1 
       RETURNING *
     `, [id]);
 
-    res.json({ message: '🚚 Orden marcada como entregada', order: updated.rows[0] });
+    res.json({ message: 'Orden marcada como entregada ✅', order: result.rows[0] });
   } catch (error) {
-    console.error('🔥 Error al marcar como entregada:', error);
+    console.error('🔥 Error en markOrderAsDelivered:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 
 // ✅ Marcar orden como pagada
 const markOrderAsPaid = async (req, res) => {
-
-  console.log("📦 PATCH /entregar/:id body:", req.body);
-  console.log('🎯 Estado actual de orden:', order);
-
-
   const { id } = req.params;
+  console.log("💳 PATCH /pagar/:id body:", req.body);
 
   try {
-    const result = await pool.query('SELECT is_paid FROM orders WHERE id = $1', [id]);
+    const current = await pool.query('SELECT is_paid FROM orders WHERE id = $1', [id]);
 
-    if (result.rowCount === 0) {
+    if (current.rowCount === 0) {
       return res.status(404).json({ error: 'Orden no encontrada' });
     }
 
-    const orden = result.rows[0];
+    const order = current.rows[0];
+    console.log('🎯 Estado actual de orden:', order);
 
-    if (orden.is_paid) {
-      return res.status(400).json({ error: 'La orden ya fue marcada como pagada' });
+    if (order.is_paid) {
+      return res.status(400).json({ error: 'La orden ya fue pagada.' });
     }
 
-    const updated = await pool.query(`
-      UPDATE orders
-      SET is_paid = true, paid_at = NOW()
-      WHERE id = $1
+    const result = await pool.query(`
+      UPDATE orders 
+      SET is_paid = true, paid_at = NOW() 
+      WHERE id = $1 
       RETURNING *
     `, [id]);
 
-    res.json({ message: '💸 Orden marcada como pagada', order: updated.rows[0] });
+    res.json({ message: 'Orden marcada como pagada ✅', order: result.rows[0] });
   } catch (error) {
-    console.error('🔥 Error al marcar como pagada:', error);
+    console.error('🔥 Error en markOrderAsPaid:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
+
 
 
 module.exports = {
