@@ -198,11 +198,76 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
+// ✅ Marcar orden como entregada
+const markOrderAsDelivered = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('SELECT is_delivered FROM orders WHERE id = $1', [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Orden no encontrada' });
+    }
+
+    const orden = result.rows[0];
+
+    if (orden.is_delivered) {
+      return res.status(400).json({ error: 'La orden ya fue marcada como entregada' });
+    }
+
+    const updated = await pool.query(`
+      UPDATE orders
+      SET is_delivered = true, delivered_at = NOW()
+      WHERE id = $1
+      RETURNING *
+    `, [id]);
+
+    res.json({ message: '🚚 Orden marcada como entregada', order: updated.rows[0] });
+  } catch (error) {
+    console.error('🔥 Error al marcar como entregada:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+// ✅ Marcar orden como pagada
+const markOrderAsPaid = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('SELECT is_paid FROM orders WHERE id = $1', [id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Orden no encontrada' });
+    }
+
+    const orden = result.rows[0];
+
+    if (orden.is_paid) {
+      return res.status(400).json({ error: 'La orden ya fue marcada como pagada' });
+    }
+
+    const updated = await pool.query(`
+      UPDATE orders
+      SET is_paid = true, paid_at = NOW()
+      WHERE id = $1
+      RETURNING *
+    `, [id]);
+
+    res.json({ message: '💸 Orden marcada como pagada', order: updated.rows[0] });
+  } catch (error) {
+    console.error('🔥 Error al marcar como pagada:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+
 module.exports = {
     createOrder,
     getOrderById,
     getAllOrders, // <-- que esté aquí 
-    updateOrderStatus
+    updateOrderStatus,
+    markOrderAsDelivered,
+    markOrderAsPaid
   };
   
 

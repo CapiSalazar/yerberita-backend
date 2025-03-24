@@ -1,21 +1,21 @@
 const express = require('express');
 const router = express.Router();
-
-// ✅ Importa el middleware correctamente
 const authMiddleware = require('../middleware/authMiddleware');
 
-// ✅ Importa tus controladores
 const {
   getAllOrders,
   createOrder,
   getOrderById,
-  updateOrderStatus
+  markOrderAsDelivered,
+  markOrderAsPaid
 } = require('../controllers/orderController');
 
-// ✅ Coloca las rutas más específicas primero
-router.put('/orders/:id/status', authMiddleware, updateOrderStatus);
+// Rutas específicas primero
+router.patch('/entregar/:id', authMiddleware, markOrderAsDelivered);
+router.patch('/pagar/:id', authMiddleware, markOrderAsPaid);
+
 router.get('/', authMiddleware, getAllOrders);
 router.post('/', authMiddleware, createOrder);
-router.get('/:id', authMiddleware, getOrderById); // Esta al final
+router.get('/:id', authMiddleware, getOrderById);
 
 module.exports = router;
